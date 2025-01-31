@@ -34,8 +34,8 @@ function displayQuestion(question) {
         <form>
         ${choices.map((choice, index) =>
             `<div>
-                <input type="radio" id="choice${index}" name="answer" value="${choice}">
-                <label for="choice${index}">${choice}</label>
+                <input type="radio" id="choice${choice+index}" name="answer" value="${choice}">
+                <label for="choice${choice+index}">${choice}</label>
             </div>`
         ).join('')}
         </form>
