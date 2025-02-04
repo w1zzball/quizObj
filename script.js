@@ -1,9 +1,12 @@
 const questionArea = document.getElementById('question-area');
-
-async function getQuestions2(amount, catagories, difficulty) {
+let score = 0;
+let currentQuestion = 0;
+let questions = [];
+async function getQuestions(amount, catagories, difficulty) {
     try {
         const response = await fetch(`https://the-trivia-api.com/v2/questions?limit=${amount}&categories=${catagories}&difficulties=${difficulty}`);//attempt to get data
         const data = await response.json();//parse json into js object
+        console.log(data);//log data
         return data;
     } catch (error) {
         console.error('Error:', error);//log error
@@ -15,7 +18,6 @@ function displayQuestion(question) {
         console.error('Question is undefined');
         return;
     }
-    //get question text, correct answer, and choices from question object
     const questionText = question.question.text;
     const correctAnswer = question.correctAnswer;
     const choices = [...question.incorrectAnswers, correctAnswer].sort(() => Math.random() - 0.5);//the .sort randomsies the order
@@ -23,11 +25,11 @@ function displayQuestion(question) {
 
 
     if (question.type === "text_choice") {
-    text = `<p>${questionText}</p>
-    <div>
+        text = `<p>${questionText}</p>
+    <div id="${question.id}">
     ${choices.map((choice) =>
-        `<button onclick="${choice === correctAnswer ? 'correctAnswer()' : 'incorrectAnswer()'}">${choice}</button>`
-    ).join('')}
+            `<button onclick="${choice === correctAnswer ? 'check(this, true)' : 'check(this, false)'}">${choice}</button>`
+        ).join('')}
     </div>`;//put each choice in a button element and join them together
     }
 
@@ -35,37 +37,40 @@ function displayQuestion(question) {
         console.log('Invalid question type');
         text = `<p> invalid q</p>\n`;
     }
-    questionArea.innerHTML += text;
+    questionArea.innerHTML = text;
 
 }
-
-function incorrectAnswer(){
-    console.log('Incorrect answer!');
-}
-
-function correctAnswer(){
-    console.log('Correct answer!');
+function check(element, isCorrect) {
+    if (isCorrect) {
+        score++;
+        console.log('Correct answer!');
+    } else {
+        console.log('Incorrect answer!');
+    }
+    [...element.parentElement.children].forEach(child => {
+        child.style.backgroundColor = isCorrect ? 'green' : 'red';
+    });
+    const nextButton = document.createElement('button');
+    nextButton.textContent = 'Next';
+    nextButton.onclick = () => {
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+            displayQuestion(questions[currentQuestion]);
+        } else {
+            questionArea.innerHTML = `<p>Quiz completed! Your score is ${score}.</p>`;
+        }
+    };
+    questionArea.appendChild(nextButton);
 }
 
 async function initQuiz() {
-    const questions = await getQuestions2(10, "general_knowledge", "easy");
+    questions = await getQuestions(10, "general_knowledge", "easy");
     if (questions) {
-        questions.forEach(question => {
-            displayQuestion(question);
-        });
+        displayQuestion(questions[currentQuestion]);
     }
-    else{
+    else {
         console.error('No questions found');
     }
 }
 
 initQuiz();
-
-function parseCategory(categories){
-    let capitalisedCategories = categories==="general_knowledge" ? //ternary expression to check if category is "general_knowledge"
-        "General Knowledge" : //handle special case, else...
-        categories.replace("_", " and ")//replace underscore with 'and'
-        .split(" ")//split string into words
-        .map((word) => word === "and" ? "and" : word.charAt(0).toUpperCase() + word.slice(1)).join(" ");//capitalise first letter of each word except 'and'
-    console.log(capitalisedCategories);
-}
